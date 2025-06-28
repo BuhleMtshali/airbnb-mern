@@ -7,6 +7,7 @@ require('dotenv').config();
 
 const app = express();
 const bcryptSalt = bcrypt.genSaltSync(10);
+const jwtSecrete = 'fasefraw4r53wq45wdfgw';
 
 mongoose.connect(process.env.MONGO_URL)
   .then(() => console.log('✅ Connected to MongoDB'))
@@ -35,6 +36,24 @@ app.post('/register', async (req, res) => {
     res.status(422).json(e);
   }
 });
+
+app.post('/login', async(req, res) => {
+  mongoose.connect(process.env.MONGO_URL);
+  const { email, password } = req.body;
+  const userDoc = await User.findOne({ email });
+  if(userDoc){
+    const passOk = bcrypt.compareSync(password, userDoc.password);
+    if(passOk){
+      jwt.sign({ email: userDoc.email, id: userDoc._id }, jwtSecrete, {}, (err, token) => {
+        res.cookie('token', token).json(userDoc);
+      });
+    } else {
+      res.status(422).json('pass not ok')
+    }
+  } else {
+    res.json('mot found')
+  }
+})
 
 app.listen(4000, () => {
   console.log('🚀 Server running at http://localhost:4000');
