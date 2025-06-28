@@ -5,7 +5,7 @@ function App() {
   
 
   return (
-      <div>
+      <div className='bg-blue-200'>
        AirBnB MERN
     </div>
   )
