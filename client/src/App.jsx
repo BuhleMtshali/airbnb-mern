@@ -8,6 +8,8 @@ import Register from './components/Register';
 import axios from 'axios';
 import { UserContextProvider } from './UserContext';
 import Profile from './components/Profile';
+import Places from './components/Places';
+import Bookings from './components/Bookings';
 
 axios.defaults.baseURL = 'http://localhost:4000';
 axios.defaults.withCredentials = true;
@@ -21,8 +23,8 @@ function App() {
           <Route path='/login' element={<Login />} />
           <Route path='/register' element={<Register />} />
           <Route path='/account' element={<Profile />} />
-          <Route path='/account/bookings' element={<Profile />} />
-          <Route path='/account/places' element={<Profile />} />
+          <Route path='/account/bookings' element={<Bookings />} />
+          <Route path='/account/places' element={<Places />} />
         </Route>
       </Routes>
     </UserContextProvider>
