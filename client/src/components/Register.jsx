@@ -1,6 +1,22 @@
 import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import axios from "axios";
 
 const Register = () => {
+    const [name, setName] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const registerUser = async e => {
+        e.preventDefault();
+        try{
+            await axios.post('/register', { name, email, password });
+            alert("Registration successful, Now you can log in")
+        } catch (e){
+            alert("Registration failed. Please Try again later")
+        }
+    }
+
+
     return(
        <div className="mt-4 grow flex items-center justify-around">
         <div className="mt-64">
