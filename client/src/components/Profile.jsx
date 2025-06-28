@@ -3,7 +3,7 @@ import { UserContext } from "../UserContext";
 import { Navigate, useParams } from "react-router-dom";
 import AccountNav from "../AccountNav";
 import Places from './Places';
-import { useContext, useState } from "react";
+import Bookings from './Bookings'
 import axios from "axios";
 
 const Profile = () => {
