@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Navigate } from "react-router-dom";
 import AccountNav from '../AccountNav';
+import Perks from "../Perks";
 
 const PlacesForm = () => {
     const [title, setTitle] = useState('');
@@ -43,6 +44,10 @@ const PlacesForm = () => {
                 <input type="text" value={address} onChange={e => setAddress(e.target.value)} placeholder="address" />
                 {preInput('Description', 'description of the place')}
                 <textarea value={description} onChange={e => setDscription(e.target.value)} />
+                {preInput('Perks', 'select all the perks of your place')}
+                <div className="grid mt-2 gap-2 grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+                    <Perks selected={perks} onChange={setPerks}/>
+                </div>
                 {preInput('Extra info', 'house rules, etc')}
                 <textarea value={extraInfo} onChange={e => setExtraInfo(e.target.value)}/>
                 {preInput('Check in&out times', 'add check in and out times, remember to have some time window for cleaning the room between guests')}
