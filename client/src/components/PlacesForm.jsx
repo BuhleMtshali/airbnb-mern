@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Navigate } from "react-router-dom";
 import AccountNav from '../AccountNav';
 import Perks from "../Perks";
+import PhotosUploader from '../PhotosUploader';
 
 const PlacesForm = () => {
     const [title, setTitle] = useState('');
@@ -42,6 +43,8 @@ const PlacesForm = () => {
                 <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="title, example: My lovely apt"/>
                 {preInput('Address', 'Address to this place')}
                 <input type="text" value={address} onChange={e => setAddress(e.target.value)} placeholder="address" />
+                {preInput('Photos', 'more photos are better')}
+                <PhotosUploader addedPhotos={addedPhotos} onChange={setAddedPhotos}/>
                 {preInput('Description', 'description of the place')}
                 <textarea value={description} onChange={e => setDscription(e.target.value)} />
                 {preInput('Perks', 'select all the perks of your place')}

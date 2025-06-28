@@ -17,6 +17,7 @@ mongoose.connect(process.env.MONGO_URL)
   .catch(err => console.error('❌ MongoDB connection error:', err));
 
 app.use(cookieParser());
+app.use('/uploads', express.static(__dirname+'/uploads'));
 app.use(express.json());
 app.use(cors({
   credentials: true,
