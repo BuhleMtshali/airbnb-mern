@@ -43,4 +43,4 @@ const Place = () => {
         </div>
     )
 }
-export default Place
+export default Place;
