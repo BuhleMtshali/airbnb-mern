@@ -209,6 +209,49 @@ app.get('/bookings', async (req, res) => {
   res.json(bookings);
 });
 
+app.delete('/places/:id', async (req, res) => {
+  const { id } = req.params;
+  const { token } = req.cookies;
+
+  jwt.verify(token, jwtSecret, {}, async (err, userData) => {
+    if (err) return res.status(401).json('Unauthorized');
+
+    const placeDoc = await Place.findById(id);
+    if (!placeDoc) return res.status(404).json('Place not found');
+
+    if (placeDoc.owner.toString() === userData.id) {
+      await Place.findByIdAndDelete(id);
+      res.json('Deleted successfully');
+    } else {
+      res.status(403).json('Forbidden: You do not own this place');
+    }
+  });
+});
+
+
+app.delete('/bookings/:id', async (req, res) => {
+  const { token } = req.cookies;
+  const { id } = req.params;
+
+  try {
+    const userData = await getUserDataFromReq(req);
+    const booking = await Booking.findById(id);
+
+    if (!booking) return res.status(404).json({ error: 'Booking not found' });
+
+    if (booking.user.toString() !== userData.id) {
+      return res.status(403).json({ error: 'Not authorized to cancel this booking' });
+    }
+
+    await Booking.findByIdAndDelete(id);
+    res.json({ message: 'Booking cancelled successfully' });
+  } catch (err) {
+    console.error('❌ Failed to cancel booking:', err);
+    res.status(500).json({ error: 'Cancellation failed', details: err.message });
+  }
+});
+
+
 //  SERVER LISTEN
 app.listen(4000, () => {
   console.log('🚀 Server running at http://localhost:4000');

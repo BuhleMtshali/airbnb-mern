@@ -15,10 +15,10 @@ const Index = () => {
     return (
         <div className="mt-8 grid gap-x-6 gap-y-8 grid-cols-2 md:grid-cols-3 lg:grid-cols-3">
             {places.length > 0 && places.map(place => (
-                <Link to={'/place/' + place._id}>
+                <Link to={'/place/' + place._id} key={place._id}>
                     <div className="bg-gray-500 mb-2 rounded-2xl flex">
                         {place.photos?.[0] && (
-                            <Image className="rounded-2xl object-cover aspect-square" src={place.photos?.[0]} alt="" />
+                            <Image className="rounded-2xl object-cover aspect-square" src={place.photos[0]} alt="" />
                         )}
                     </div>
                     <h2 className="font-bold">{place.address}</h2>
@@ -32,4 +32,4 @@ const Index = () => {
     );
 }
 
-export default Index
+export default Index;
