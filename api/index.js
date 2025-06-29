@@ -10,51 +10,74 @@ const bcrypt = require('bcryptjs');
 const User = require('./models/User.js');
 const Place = require('./models/Place.js');
 const Booking = require('./models/Booking.js');
-const { resolve } = require('path');
-const { rejects } = require('assert');
 require('dotenv').config();
 
 const app = express();
 const bcryptSalt = bcrypt.genSaltSync(10);
 const jwtSecret = 'fasefraw4r53wq45wdfgw';
 
+// DB connect
 mongoose.connect(process.env.MONGO_URL)
   .then(() => console.log('✅ Connected to MongoDB'))
   .catch(err => console.error('❌ MongoDB connection error:', err));
 
 app.use(cookieParser());
-app.use('/uploads', express.static(__dirname+'/uploads'));
+app.use('/uploads', express.static(__dirname + '/uploads'));
 app.use(express.json());
 app.use(cors({
   credentials: true,
   origin: ['http://localhost:5173', 'http://localhost:5174'],
 }));
 
-function getUserDataFromReq(req){
+// 🧠 Get user data from token
+function getUserDataFromReq(req) {
   return new Promise((resolve, reject) => {
-    jwt.verify(req.cook.token, jwtSecret, {}, async (err, userData) => {
+    const { token } = req.cookies;
+    if (!token) return reject('No token provided');
+    jwt.verify(token, jwtSecret, {}, (err, userData) => {
+      if (err) return reject(err);
       resolve(userData);
-    })
-  })
+    });
+  });
 }
 
-app.post('/bookings', async(req, res) => {
-  mongoose.connect(process.env.MONGO_URL);
-  const userData = await getUserDataFromReq(req);
-  const { place, checkIn, checkOut, numberOfGuests, name, phone, price } = req.body;
-  Booking.create({ place, checkIn, checkOut, numberOfGuests, name, phone, price, user: userData.id}).then((doc) => {
-    res.json(doc);
-  }).catch((err) => {
-    throw err;
-  })
+// ✅ Create Booking
+app.post('/bookings', async (req, res) => {
+  try {
+    const userData = await getUserDataFromReq(req);
+    const { place, checkIn, checkOut, numberOfGuests, name, phone, price } = req.body;
+
+    const bookingDoc = await Booking.create({
+      place,
+      checkIn,
+      checkOut,
+      numberOfGuests,
+      name,
+      phone,
+      price,
+      user: userData.id,
+    });
+
+    res.json(bookingDoc);
+  } catch (err) {
+    console.error('❌ Booking creation failed:', err);
+    res.status(500).json({ error: 'Booking creation failed', details: err.message });
+  }
 });
 
+// ✅ Get Bookings
 app.get('/bookings', async (req, res) => {
-  mongoose.connect(process.env.MONGO_URL);
-  const userData = await getUserDataFromReq(req);
-  res.json(await Booking.find({ user: userData.id }).populate('place'))
-})
+  try {
+    const userData = await getUserDataFromReq(req);
+    const bookings = await Booking.find({ user: userData.id }).populate('place');
+    res.json(bookings);
+  } catch (err) {
+    console.error('❌ Failed to get bookings:', err);
+    res.status(500).json({ error: 'Failed to get bookings' });
+  }
+});
 
+// ✅ Create Place
 app.post('/places', async (req, res) => {
   const { token } = req.cookies;
   const {
@@ -69,7 +92,7 @@ app.post('/places', async (req, res) => {
       owner: userData.id,
       title,
       address,
-      photos: addedPhotos, // 🟢 make sure this is correctly mapped
+      photos: addedPhotos,
       description,
       perks,
       extraInfo,
@@ -83,31 +106,54 @@ app.post('/places', async (req, res) => {
   });
 });
 
-app.get('/places', async(req, res) => {
-  mongoose.connect(process.env.MONGO_URL);
-  res.json(await Place.find())
-})
+// ✅ Update Place
+app.put('/places', async (req, res) => {
+  const { token } = req.cookies;
+  const {
+    id, title, address, addedPhotos, description,
+    perks, extraInfo, checkIn, checkOut, maxGuests, price
+  } = req.body;
 
+  jwt.verify(token, jwtSecret, {}, async (err, userData) => {
+    if (err) throw err;
+    const placeDoc = await Place.findById(id);
+    if (userData.id === placeDoc.owner.toString()) {
+      placeDoc.set({
+        title, address, photos: addedPhotos, description,
+        perks, extraInfo, checkIn, checkOut, maxGuests, price
+      });
+      await placeDoc.save();
+      res.json('ok');
+    }
+  });
+});
 
+// ✅ Get All Places
+app.get('/places', async (req, res) => {
+  res.json(await Place.find());
+});
+
+// ✅ Get User's Places
 app.get('/user-places', (req, res) => {
-  mongoose.connect(process.env.MONGO_URL);
   const { token } = req.cookies;
   jwt.verify(token, jwtSecret, {}, async (err, userData) => {
     const { id } = userData;
-    res.json(await Place.find({ owner: id }))
-  })
-})
+    res.json(await Place.find({ owner: id }));
+  });
+});
 
+// ✅ Get Place by ID
 app.get('/places/:id', async (req, res) => {
-  mongoose.connect(process.env.MONGO_URL);
   const { id } = req.params;
-  res.json(await Place.findById(id))
-})
+  res.json(await Place.findById(id));
+});
 
+// ✅ Test route
 app.get('/test', (req, res) => {
   res.json('Test is ok');
 });
 
+// ✅ Register
 app.post('/register', async (req, res) => {
   const { name, email, password } = req.body;
   try {
@@ -122,6 +168,7 @@ app.post('/register', async (req, res) => {
   }
 });
 
+// ✅ Login
 app.post('/login', async (req, res) => {
   const { email, password } = req.body;
   const userDoc = await User.findOne({ email });
@@ -141,28 +188,11 @@ app.post('/login', async (req, res) => {
   }
 });
 
-app.put('/places', async (req, res) => {
-  mongoose.connect(process.env.MONGO_URL);
-  const { token } = req.cookies;
-  const { id, title, address, addedPhotos, description, perks, extraInfo, checkIn, checkOut, maxGuests, price } = req.body;
-  jwt.verify(token, jwtSecret, {}, async(err, userData) => {
-    if(err) throw err;
-    const placeDoc = await Place.findById(id);
-    if(userData.id === placeDoc.owner.toString()){
-      placeDoc.set({ title, address, photos: addedPhotos, description, perks, extraInfo, checkIn, checkOut, maxGuests, price })
-      await placeDoc.save();
-      res.json('ok')
-    }
-  })
-})
-
+// ✅ Profile
 app.get('/profile', (req, res) => {
-  mongoose.connect(process.env.MONGO_URL)
   const { token } = req.cookies;
 
-  if (!token) {
-    return res.json(null);
-  }
+  if (!token) return res.json(null);
 
   jwt.verify(token, jwtSecret, {}, async (err, userData) => {
     if (err) return res.status(401).json('Token invalid');
@@ -171,34 +201,31 @@ app.get('/profile', (req, res) => {
   });
 });
 
+// ✅ Logout
 app.post('/logout', (req, res) => {
   res.cookie('token', '').json(true);
 });
 
-
+// ✅ Upload by link
 app.post('/upload-by-link', async (req, res) => {
   const { link } = req.body;
-  if (!link) {
-    return res.status(400).json({ error: 'No link provided' });
-  }
+  if (!link) return res.status(400).json({ error: 'No link provided' });
 
   const newName = 'photo' + Date.now() + '.jpg';
-  console.log("🟡 Attempting to download:", link);
   try {
     await imageDownloader.image({
       url: link,
       dest: __dirname + '/uploads/' + newName,
     });
-    console.log("✅ Successfully downloaded:", newName);
     res.json(newName);
   } catch (err) {
-    console.error("❌ Image download failed:", err);  // Log the entire error object
+    console.error("❌ Image download failed:", err);
     res.status(500).json({ error: 'Image download failed', details: err.message || err });
   }
 });
 
-
-const photosMiddleware = multer({dest: 'uploads/'});
+// ✅ Upload via form
+const photosMiddleware = multer({ dest: 'uploads/' });
 app.post('/upload', photosMiddleware.array('photos', 100), async (req, res) => {
   try {
     const uploadFiles = [];
@@ -217,8 +244,7 @@ app.post('/upload', photosMiddleware.array('photos', 100), async (req, res) => {
   }
 });
 
-
-
+// ✅ Start Server
 app.listen(4000, () => {
   console.log('🚀 Server running at http://localhost:4000');
 });
