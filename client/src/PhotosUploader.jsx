@@ -22,24 +22,25 @@ async function addPhotoByLink(e) {
   }
 }
 
-
-  function uploadPhoto(e) {
-    const files = e.target.files;
-    const data = new FormData();
-    for (let i = 0; i < files.length; i++) {
-      data.append('photos', files[i]);
-    }
-
-    axios.post('/upload', data, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    }).then(response => {
-      const { data: filenames } = response;
-      onChange(prev => [...prev, ...filenames]);
-    }).catch(err => {
-      console.error('❌ Upload failed:', err);
-      alert('Photo upload failed. Try again.');
-    });
+function uploadPhoto(e) {
+  const files = e.target.files;
+  const data = new FormData();
+  for (let i = 0; i < files.length; i++) {
+    data.append('photos', files[i]); // must match .array('photos') on server
   }
+
+  axios.post('/upload', data, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
+  .then(response => {
+    const { data: filenames } = response;
+    onChange(prev => [...prev, ...filenames]);
+  })
+  .catch(err => {
+    console.error('❌ Upload failed:', err);
+    alert('Photo upload failed. Try again.');
+  });
+}
 
   function removePhoto(e, link) {
     e.preventDefault();

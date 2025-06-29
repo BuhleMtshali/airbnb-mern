@@ -8,6 +8,7 @@ const fs = require('fs');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const User = require('./models/User.js');
+const Place = require('./models/Place.js')
 require('dotenv').config();
 
 const app = express();
@@ -25,6 +26,17 @@ app.use(cors({
   credentials: true,
   origin: ['http://localhost:5173', 'http://localhost:5174'],
 }));
+
+app.post('/places', (req, res) => {
+  mongoose.connect(process.env.MONGO_URL);
+  const { token } = req.cookies;
+  const { title, address, addedPhotos, description, price, perks, extraInfo, checkIn, checkOut, maxGuests } = req.query;
+  jwt.verify(token, jwtSecret, {}, async(err, userData) => {
+    if(err) throw err;
+    const placeDoc = await Place.create({ owner: userData.id, price, title, address, photos: addedPhotos, description, perks, extraInfo, checkIn, checkOut, maxGuests });
+    res.json(placeDoc)
+  })
+})
 
 app.get('/test', (req, res) => {
   res.json('Test is ok');
@@ -107,17 +119,23 @@ app.post('/upload-by-link', async (req, res) => {
 
 const photosMiddleware = multer({dest: 'uploads/'});
 app.post('/upload', photosMiddleware.array('photos', 100), async (req, res) => {
-  const uploadFiles = [];
-  for (let i = 0; i < req.files.length; i++){
-    const { path, originalname } = req.files[i];
-    const parts = originalname.split('.');
-    const ext = parts[parts.length - 1];
-    const newPath = path + '.' + ext;
-    fs.renameSync(path, newPath);
-    uploadFiles.push(newPath.replace('uploads/', ''))
+  try {
+    const uploadFiles = [];
+    for (let i = 0; i < req.files.length; i++) {
+      const { path, originalname } = req.files[i];
+      const parts = originalname.split('.');
+      const ext = parts[parts.length - 1];
+      const newPath = path + '.' + ext;
+      fs.renameSync(path, newPath);
+      uploadFiles.push(newPath.replace('uploads/', ''));
+    }
+    res.json(uploadFiles);
+  } catch (err) {
+    console.error('❌ File upload error:', err);
+    res.status(500).json({ error: 'File upload failed' });
   }
-  res.json(uploadFiles)
-})
+});
+
 
 
 app.listen(4000, () => {

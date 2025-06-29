@@ -3,6 +3,7 @@ import { Navigate } from "react-router-dom";
 import AccountNav from '../AccountNav';
 import Perks from "../Perks";
 import PhotosUploader from '../PhotosUploader';
+import axios from "axios";
 
 const PlacesForm = () => {
     const [title, setTitle] = useState('');
@@ -34,11 +35,18 @@ const PlacesForm = () => {
         )
     }
 
+    const savePlace = async e => {
+        e.preventDefault();
+        const placeData = { title, address, addedPhotos, description, perks, extraInfo, checkIn, checkOut, maxGuests, price };
+        await axios.post('/places', placeData);
+        setRedirect(true0);
+    }
+
     if (redirect) return <Navigate to={'/account/places'}/>
     return(
         <div>
             <AccountNav />
-            <form>
+            <form onSubmit={savePlace}>
                 {preInput('Title', 'Title for your place. should be short and catchy as in advertisement')}
                 <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="title, example: My lovely apt"/>
                 {preInput('Address', 'Address to this place')}
