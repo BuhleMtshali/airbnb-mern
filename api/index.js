@@ -80,14 +80,25 @@ app.post('/logout', (req, res) => {
   res.cookie('token', '').json(true);
 });
 
-app.post('/upload-by-link', async(req, res) => {
-  const {link} = req.body;
+
+app.post('/upload-by-link', async (req, res) => {
+  const { link } = req.body;
   const newName = 'photo' + Date.now() + '.jpg';
-  await imageDownloader.image({
-    url: link,
-    dest: __dirname + '/uploads/' + newName
-  });
-})
+  console.log("🟡 Attempting to download:", link);
+  try {
+    await imageDownloader.image({
+      url: link,
+      dest: __dirname + '/uploads/' + newName,
+    });
+    console.log("✅ Successfully downloaded:", newName);
+    res.json(newName);
+  } catch (err) {
+    console.error("❌ Image download failed:", err.message || err);
+    res.status(500).json({ error: 'Image download failed' });
+  }
+});
+
+
 
 app.listen(4000, () => {
   console.log('🚀 Server running at http://localhost:4000');
