@@ -85,6 +85,10 @@ app.post('/logout', (req, res) => {
 
 app.post('/upload-by-link', async (req, res) => {
   const { link } = req.body;
+  if (!link) {
+    return res.status(400).json({ error: 'No link provided' });
+  }
+
   const newName = 'photo' + Date.now() + '.jpg';
   console.log("🟡 Attempting to download:", link);
   try {
@@ -95,10 +99,11 @@ app.post('/upload-by-link', async (req, res) => {
     console.log("✅ Successfully downloaded:", newName);
     res.json(newName);
   } catch (err) {
-    console.error("❌ Image download failed:", err.message || err);
-    res.status(500).json({ error: 'Image download failed' });
+    console.error("❌ Image download failed:", err);  // Log the entire error object
+    res.status(500).json({ error: 'Image download failed', details: err.message || err });
   }
 });
+
 
 const photosMiddleware = multer({dest: 'uploads/'});
 app.post('/upload', photosMiddleware.array('photos', 100), async (req, res) => {
