@@ -55,6 +55,11 @@ app.post('/places', async (req, res) => {
   });
 });
 
+app.get('/places', async(req, res) => {
+  mongoose.connect(process.env.MONGO_URL);
+  res.json(await Place.find())
+})
+
 
 app.get('/user-places', (req, res) => {
   mongoose.connect(process.env.MONGO_URL);
