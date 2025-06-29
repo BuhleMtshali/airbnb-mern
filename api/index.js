@@ -7,16 +7,16 @@ const multer = require('multer');
 const fs = require('fs');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const User = require('./models/User.js');
-const Place = require('./models/Place.js');
-const Booking = require('./models/Booking.js');
 require('dotenv').config();
+
+const User = require('./models/User');
+const Place = require('./models/Place');
+const Booking = require('./models/Booking');
 
 const app = express();
 const bcryptSalt = bcrypt.genSaltSync(10);
-const jwtSecret = 'fasefraw4r53wq45wdfgw';
+const jwtSecret = process.env.JWT_SECRET || 'supersecret123';
 
-// DB connect
 mongoose.connect(process.env.MONGO_URL)
   .then(() => console.log('✅ Connected to MongoDB'))
   .catch(err => console.error('❌ MongoDB connection error:', err));
@@ -26,10 +26,10 @@ app.use('/uploads', express.static(__dirname + '/uploads'));
 app.use(express.json());
 app.use(cors({
   credentials: true,
-  origin: ['http://localhost:5173', 'http://localhost:5174'],
+  origin: ['http://localhost:5173', 'http://localhost:5174'], // adjust for frontend ports
 }));
 
-// 🧠 Get user data from token
+// 🔐 Utility: Extract user data from token
 function getUserDataFromReq(req) {
   return new Promise((resolve, reject) => {
     const { token } = req.cookies;
@@ -41,7 +41,122 @@ function getUserDataFromReq(req) {
   });
 }
 
-// ✅ Create Booking
+// 📌 Authentication Routes
+app.post('/register', async (req, res) => {
+  const { name, email, password, role } = req.body;
+  try {
+    const userDoc = await User.create({
+      name,
+      email,
+      password: bcrypt.hashSync(password, bcryptSalt),
+      role: role || 'user',
+    });
+    res.json(userDoc);
+  } catch (err) {
+    res.status(422).json({ error: 'Registration failed', details: err.message });
+  }
+});
+
+app.post('/login', async (req, res) => {
+  const { email, password } = req.body;
+  const userDoc = await User.findOne({ email });
+
+  if (!userDoc) return res.status(404).json('User not found');
+
+  const passOk = bcrypt.compareSync(password, userDoc.password);
+  if (!passOk) return res.status(422).json('Invalid password');
+
+  jwt.sign({ id: userDoc._id, email: userDoc.email, role: userDoc.role }, jwtSecret, {}, (err, token) => {
+    if (err) throw err;
+    res.cookie('token', token, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+    }).json({
+      name: userDoc.name,
+      email: userDoc.email,
+      _id: userDoc._id,
+      role: userDoc.role,
+    });
+  });
+});
+
+app.get('/profile', (req, res) => {
+  const { token } = req.cookies;
+  if (!token) return res.json(null);
+
+  jwt.verify(token, jwtSecret, {}, async (err, userData) => {
+    if (err) return res.status(401).json('Token invalid');
+    const userDoc = await User.findById(userData.id);
+    res.json(userDoc);
+  });
+});
+
+app.post('/logout', (req, res) => {
+  res.cookie('token', '').json(true);
+});
+
+// 🏠 Places Routes
+app.post('/places', async (req, res) => {
+  const { token } = req.cookies;
+  const data = req.body;
+
+  jwt.verify(token, jwtSecret, {}, async (err, userData) => {
+    if (err) return res.status(401).json('Unauthorized');
+    const placeDoc = await Place.create({ ...data, owner: userData.id });
+    res.json(placeDoc);
+  });
+});
+
+app.put('/places', async (req, res) => {
+  const { token } = req.cookies;
+  const { id, ...updateData } = req.body;
+
+  jwt.verify(token, jwtSecret, {}, async (err, userData) => {
+    if (err) return res.status(401).json('Unauthorized');
+    const placeDoc = await Place.findById(id);
+    if (placeDoc.owner.toString() !== userData.id) return res.status(403).json('Forbidden');
+    placeDoc.set(updateData);
+    await placeDoc.save();
+    res.json('ok');
+  });
+});
+
+app.get('/places', async (req, res) => {
+  const places = await Place.find();
+  res.json(places);
+});
+
+app.get('/places/:id', async (req, res) => {
+  const { id } = req.params;
+  const place = await Place.findById(id);
+  res.json(place);
+});
+
+app.get('/user-places', (req, res) => {
+  const { token } = req.cookies;
+  jwt.verify(token, jwtSecret, {}, async (err, userData) => {
+    if (err) return res.status(401).json('Unauthorized');
+    const places = await Place.find({ owner: userData.id });
+    res.json(places);
+  });
+});
+
+app.delete('/places/:id', async (req, res) => {
+  const { id } = req.params;
+  const { token } = req.cookies;
+
+  jwt.verify(token, jwtSecret, {}, async (err, userData) => {
+    if (err) return res.status(401).json('Unauthorized');
+    const placeDoc = await Place.findById(id);
+    if (!placeDoc) return res.status(404).json('Place not found');
+    if (placeDoc.owner.toString() !== userData.id) return res.status(403).json('Forbidden');
+    await Place.findByIdAndDelete(id);
+    res.json('Deleted successfully');
+  });
+});
+
+// 📦 Booking Routes
 app.post('/bookings', async (req, res) => {
   try {
     const userData = await getUserDataFromReq(req);
@@ -60,191 +175,55 @@ app.post('/bookings', async (req, res) => {
 
     res.json(bookingDoc);
   } catch (err) {
-    console.error('❌ Booking creation failed:', err);
     res.status(500).json({ error: 'Booking creation failed', details: err.message });
   }
 });
 
-// ✅ Get Bookings
 app.get('/bookings', async (req, res) => {
   try {
     const userData = await getUserDataFromReq(req);
     const bookings = await Booking.find({ user: userData.id }).populate('place');
     res.json(bookings);
   } catch (err) {
-    console.error('❌ Failed to get bookings:', err);
     res.status(500).json({ error: 'Failed to get bookings' });
   }
 });
 
-// ✅ Create Place
-app.post('/places', async (req, res) => {
-  const { token } = req.cookies;
-  const {
-    title, address, addedPhotos, description,
-    perks, extraInfo, checkIn, checkOut, maxGuests, price
-  } = req.body;
-
-  jwt.verify(token, jwtSecret, {}, async (err, userData) => {
-    if (err) throw err;
-
-    const placeDoc = await Place.create({
-      owner: userData.id,
-      title,
-      address,
-      photos: addedPhotos,
-      description,
-      perks,
-      extraInfo,
-      checkIn,
-      checkOut,
-      maxGuests,
-      price,
-    });
-
-    res.json(placeDoc);
-  });
-});
-
-// ✅ Update Place
-app.put('/places', async (req, res) => {
-  const { token } = req.cookies;
-  const {
-    id, title, address, addedPhotos, description,
-    perks, extraInfo, checkIn, checkOut, maxGuests, price
-  } = req.body;
-
-  jwt.verify(token, jwtSecret, {}, async (err, userData) => {
-    if (err) throw err;
-    const placeDoc = await Place.findById(id);
-    if (userData.id === placeDoc.owner.toString()) {
-      placeDoc.set({
-        title, address, photos: addedPhotos, description,
-        perks, extraInfo, checkIn, checkOut, maxGuests, price
-      });
-      await placeDoc.save();
-      res.json('ok');
-    }
-  });
-});
-
-// ✅ Get All Places
-app.get('/places', async (req, res) => {
-  res.json(await Place.find());
-});
-
-// ✅ Get User's Places
-app.get('/user-places', (req, res) => {
-  const { token } = req.cookies;
-  jwt.verify(token, jwtSecret, {}, async (err, userData) => {
-    const { id } = userData;
-    res.json(await Place.find({ owner: id }));
-  });
-});
-
-// ✅ Get Place by ID
-app.get('/places/:id', async (req, res) => {
-  const { id } = req.params;
-  res.json(await Place.findById(id));
-});
-
-// ✅ Test route
-app.get('/test', (req, res) => {
-  res.json('Test is ok');
-});
-
-// ✅ Register
-app.post('/register', async (req, res) => {
-  const { name, email, password } = req.body;
-  try {
-    const userDoc = await User.create({
-      name,
-      email,
-      password: bcrypt.hashSync(password, bcryptSalt),
-    });
-    res.json(userDoc);
-  } catch (e) {
-    res.status(422).json(e);
-  }
-});
-
-// ✅ Login
-app.post('/login', async (req, res) => {
-  const { email, password } = req.body;
-  const userDoc = await User.findOne({ email });
-
-  if (userDoc) {
-    const passOk = bcrypt.compareSync(password, userDoc.password);
-    if (passOk) {
-      jwt.sign({ id: userDoc._id, email: userDoc.email }, jwtSecret, {}, (err, token) => {
-        if (err) throw err;
-        res.cookie('token', token).json(userDoc);
-      });
-    } else {
-      res.status(422).json('Invalid password');
-    }
-  } else {
-    res.status(404).json('User not found');
-  }
-});
-
-// ✅ Profile
-app.get('/profile', (req, res) => {
-  const { token } = req.cookies;
-
-  if (!token) return res.json(null);
-
-  jwt.verify(token, jwtSecret, {}, async (err, userData) => {
-    if (err) return res.status(401).json('Token invalid');
-    const userDoc = await User.findById(userData.id);
-    res.json(userDoc);
-  });
-});
-
-// ✅ Logout
-app.post('/logout', (req, res) => {
-  res.cookie('token', '').json(true);
-});
-
-// ✅ Upload by link
+// 🖼️ Image Uploads
 app.post('/upload-by-link', async (req, res) => {
   const { link } = req.body;
   if (!link) return res.status(400).json({ error: 'No link provided' });
 
   const newName = 'photo' + Date.now() + '.jpg';
   try {
-    await imageDownloader.image({
-      url: link,
-      dest: __dirname + '/uploads/' + newName,
-    });
+    await imageDownloader.image({ url: link, dest: __dirname + '/uploads/' + newName });
     res.json(newName);
   } catch (err) {
-    console.error("❌ Image download failed:", err);
-    res.status(500).json({ error: 'Image download failed', details: err.message || err });
+    res.status(500).json({ error: 'Image download failed', details: err.message });
   }
 });
 
-// ✅ Upload via form
 const photosMiddleware = multer({ dest: 'uploads/' });
 app.post('/upload', photosMiddleware.array('photos', 100), async (req, res) => {
   try {
-    const uploadFiles = [];
-    for (let i = 0; i < req.files.length; i++) {
-      const { path, originalname } = req.files[i];
-      const parts = originalname.split('.');
-      const ext = parts[parts.length - 1];
-      const newPath = path + '.' + ext;
-      fs.renameSync(path, newPath);
-      uploadFiles.push(newPath.replace('uploads/', ''));
-    }
+    const uploadFiles = req.files.map(file => {
+      const ext = file.originalname.split('.').pop();
+      const newPath = file.path + '.' + ext;
+      fs.renameSync(file.path, newPath);
+      return newPath.replace('uploads/', '');
+    });
     res.json(uploadFiles);
   } catch (err) {
-    console.error('❌ File upload error:', err);
     res.status(500).json({ error: 'File upload failed' });
   }
 });
 
-// ✅ Start Server
+// 🌐 Test endpoint
+app.get('/test', (req, res) => {
+  res.json('Test is OK');
+});
+
+// 🚀 Launch Server
 app.listen(4000, () => {
   console.log('🚀 Server running at http://localhost:4000');
 });

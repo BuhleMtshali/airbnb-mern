@@ -13,6 +13,20 @@ const Places = () => {
     });
   }, []);
 
+  const deletePlace = async (id) => {
+    const confirmDelete = window.confirm("Are you sure you want to delete this listing?");
+    if (!confirmDelete) return;
+
+    try {
+      await axios.delete(`/places/${id}`);
+      alert("Listing deleted!");
+      setPlaces(prev => prev.filter(place => place._id !== id));
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete listing.");
+    }
+  };
+
   return (
     <div>
       <AccountNav />
@@ -36,22 +50,32 @@ const Places = () => {
           Add new place
         </Link>
       </div>
-      <div className="mt-4">
+
+      <div className="mt-4 grid gap-4">
         {places.length > 0 &&
           places.map((place) => (
-            <Link
-              to={'/account/places/' + place._id}
-              key={place._id}
-              className="flex cursor-pointer gap-4 bg-gray-100 p-4 rounded-2xl"
-            >
-              <div className="flex w-32 h-32 bg-gray-300 grow shrink-0">
-                <PlaceImg place={place} />
+            <div key={place._id} className="bg-gray-100 p-4 rounded-2xl flex flex-col md:flex-row gap-4">
+              <Link
+                to={'/account/places/' + place._id}
+                className="flex flex-1 gap-4 items-center"
+              >
+                <div className="w-32 h-32 bg-gray-300 flex-shrink-0">
+                  <PlaceImg place={place} />
+                </div>
+                <div>
+                  <h2 className="text-xl">{place.title}</h2>
+                  <p className="text-sm mt-2 text-gray-700">{place.description}</p>
+                </div>
+              </Link>
+              <div className="flex justify-end">
+                <button
+                  onClick={() => deletePlace(place._id)}
+                  className="bg-red-500 text-white px-4 py-2 rounded-md self-start"
+                >
+                  Delete
+                </button>
               </div>
-              <div className="grow-0 shrink">
-                <h2 className="text-xl">{place.title}</h2>
-                <p className="text-sm mt-2">{place.description}</p>
-              </div>
-            </Link>
+            </div>
           ))}
       </div>
     </div>
