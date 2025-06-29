@@ -111,4 +111,4 @@ const PlacesForm = () => {
         </div>
     )
 }
-export default PlacesForm
+export default PlacesForm;
