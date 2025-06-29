@@ -9,14 +9,27 @@ const BookingWidget = ({ place }) => {
   const [phone, setPhone] = useState('');
 
   let numberOfNights = 0;
-  if(checkIn && checkOut) numberOfNights = differenceInCalenderDays(new Date(checkOut), new Date(checkIn));
+  if (checkIn && checkOut) {
+    numberOfNights = differenceInCalendarDays(new Date(checkOut), new Date(checkIn));
+  }
 
-  const bookThisPlace = async () => {}
+  const bookThisPlace = async () => {
+    // booking logic goes here
+    console.log({
+      checkIn,
+      checkOut,
+      numberOfGuests,
+      name,
+      phone,
+      placeId: place._id,
+      totalPrice: numberOfNights * place.price
+    });
+  };
 
   return (
     <div className="bg-white shadow p-4 rounded-2xl">
       <div className="text-2xl text-center">
-        Price: {place.price} per night
+        Price: R{place.price} per night
       </div>
       <div className="border rounded-2xl mt-4">
         <div className="flex">
@@ -43,27 +56,31 @@ const BookingWidget = ({ place }) => {
             type="number"
             value={numberOfGuests}
             onChange={e => setNumberOfGuests(e.target.value)}
+            min={1}
           />
         </div>
         {numberOfNights > 0 && (
-            <div className="py-3 px-4 border-t">
-          <label>Your full name:</label>
-          <input
-            type="text"
-            value={name}
-            onChange={e => setName(e.target.value)}
-          />
-          <label>Phone number:</label>
-          <input
-            type="tel"
-            value={phone}
-            onChange={e => setPhone(e.target.value)}
-          />
-        </div>
+          <div className="py-3 px-4 border-t">
+            <label>Your full name:</label>
+            <input
+              type="text"
+              value={name}
+              onChange={e => setName(e.target.value)}
+            />
+            <label>Phone number:</label>
+            <input
+              type="tel"
+              value={phone}
+              onChange={e => setPhone(e.target.value)}
+            />
+          </div>
         )}
-        
       </div>
-      <button className="primary mt-4" onClick={bookThisPlace}>Book this place {numberOfNights > 0 && <span>R{numberOfNights * place.price}</span>}</button>
+      <button className="primary mt-4" onClick={bookThisPlace}>
+        Book this place {numberOfNights > 0 && (
+          <span> – Total: R{numberOfNights * place.price}</span>
+        )}
+      </button>
     </div>
   );
 };
