@@ -65,6 +65,12 @@ app.get('/user-places', (req, res) => {
   })
 })
 
+app.get('/places/:id', async (req, res) => {
+  mongoose.connect(process.env.MONGO_URL);
+  const { id } = req.params;
+  res.json(await Place.findById(id))
+})
+
 app.get('/test', (req, res) => {
   res.json('Test is ok');
 });
