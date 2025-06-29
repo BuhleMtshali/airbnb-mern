@@ -56,6 +56,15 @@ app.post('/places', async (req, res) => {
 });
 
 
+app.get('/user-places', (req, res) => {
+  mongoose.connect(process.env.MONGO_URL);
+  const { token } = req.cookies;
+  jwt.verify(token, jwtSecret, {}, async (err, userData) => {
+    const { id } = userData;
+    res.json(await Place.find({ owner: id }))
+  })
+})
+
 app.get('/test', (req, res) => {
   res.json('Test is ok');
 });
