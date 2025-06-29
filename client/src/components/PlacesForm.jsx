@@ -8,7 +8,7 @@ import axios from "axios";
 const PlacesForm = () => {
     const [title, setTitle] = useState('');
     const [address, setAddress] = useState('');
-    const [addedPhotos, setAddedPhotos] = useState('');
+    const [addedPhotos, setAddedPhotos] = useState([]);
     const [description, setDscription] = useState('');
     const [perks, setPerks] = useState([]);
     const [extraInfo, setExtraInfo] = useState('');
@@ -39,7 +39,7 @@ const PlacesForm = () => {
         e.preventDefault();
         const placeData = { title, address, addedPhotos, description, perks, extraInfo, checkIn, checkOut, maxGuests, price };
         await axios.post('/places', placeData);
-        setRedirect(true0);
+        setRedirect(true);
     }
 
     if (redirect) return <Navigate to={'/account/places'}/>

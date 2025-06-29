@@ -27,16 +27,34 @@ app.use(cors({
   origin: ['http://localhost:5173', 'http://localhost:5174'],
 }));
 
-app.post('/places', (req, res) => {
-  mongoose.connect(process.env.MONGO_URL);
+app.post('/places', async (req, res) => {
   const { token } = req.cookies;
-  const { title, address, addedPhotos, description, price, perks, extraInfo, checkIn, checkOut, maxGuests } = req.query;
-  jwt.verify(token, jwtSecret, {}, async(err, userData) => {
-    if(err) throw err;
-    const placeDoc = await Place.create({ owner: userData.id, price, title, address, photos: addedPhotos, description, perks, extraInfo, checkIn, checkOut, maxGuests });
-    res.json(placeDoc)
-  })
-})
+  const {
+    title, address, addedPhotos, description,
+    perks, extraInfo, checkIn, checkOut, maxGuests, price
+  } = req.body;
+
+  jwt.verify(token, jwtSecret, {}, async (err, userData) => {
+    if (err) throw err;
+
+    const placeDoc = await Place.create({
+      owner: userData.id,
+      title,
+      address,
+      photos: addedPhotos, // 🟢 make sure this is correctly mapped
+      description,
+      perks,
+      extraInfo,
+      checkIn,
+      checkOut,
+      maxGuests,
+      price,
+    });
+
+    res.json(placeDoc);
+  });
+});
+
 
 app.get('/test', (req, res) => {
   res.json('Test is ok');
