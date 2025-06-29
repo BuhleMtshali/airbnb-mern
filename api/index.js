@@ -8,7 +8,10 @@ const fs = require('fs');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const User = require('./models/User.js');
-const Place = require('./models/Place.js')
+const Place = require('./models/Place.js');
+const Booking = require('./models/Booking.js');
+const { resolve } = require('path');
+const { rejects } = require('assert');
 require('dotenv').config();
 
 const app = express();
@@ -26,6 +29,14 @@ app.use(cors({
   credentials: true,
   origin: ['http://localhost:5173', 'http://localhost:5174'],
 }));
+
+function getUserDataFromReq(req){
+  return new Promise((resolve, reject) => {
+    jwt.verify(req.cook.token, jwtSecret, {}, async (err, userData) => {
+      resolve(userData);
+    })
+  })
+}
 
 app.post('/places', async (req, res) => {
   const { token } = req.cookies;
