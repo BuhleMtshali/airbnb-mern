@@ -5,29 +5,39 @@ export const PropertyCard = ({ property }) => {
   const navigate = useNavigate();
 
   const handleBooking = async () => {
-    const payload = {
-      place: property._id, // 🔥 IMPORTANT: this should be the actual MongoDB _id from the backend
-      checkIn: '2025-08-10',  // Replace with real input or selection
-      checkOut: '2025-08-15', // Replace with real input or selection
-      numberOfGuests: 2,      // Replace with user input
-      name: 'Zano Mtshali',   // Can fetch from user profile or input field
-      phone: '0123456789',    // Same here
-      price: property.price * 5, // Or however you calculate total
-    };
+  console.log('Property object:', property);
 
-    try {
-      const response = await axios.post('http://localhost:4000/bookings', payload, {
-        withCredentials: true, // 🔐 important for sending cookies (JWT)
-      });
+  const placeId = property._id || property.id;
 
-      console.log('✅ Booking successful:', response.data);
-      alert('Booking successful!');
-      navigate('/account/bookings'); // Redirect user to their bookings
-    } catch (error) {
-      console.error('❌ Booking failed:', error);
-      alert('Booking failed. Please try again.');
-    }
+  if (!placeId || typeof placeId !== 'string' || placeId.length !== 24) {
+    alert('Invalid property ID detected. Can’t proceed with booking.');
+    return;
+  }
+
+  const payload = {
+    place: placeId,
+    checkIn: '2025-08-10',
+    checkOut: '2025-08-15',
+    numberOfGuests: 2,
+    name: 'Zano Mtshali',
+    phone: '0123456789',
+    price: property.price * 5,
   };
+
+  console.log('Booking payload:', payload);
+
+  try {
+    const response = await axios.post('http://localhost:4000/bookings', payload, {
+      withCredentials: true,
+    });
+    console.log('✅ Booking successful:', response.data);
+    alert('Booking successful!');
+    navigate('/account/bookings');
+  } catch (error) {
+    console.error('❌ Booking failed:', error);
+    alert('Booking failed. Please try again.');
+  }
+};
 
   return (
     <div className="bg-white p-4 rounded-xl shadow-md">
