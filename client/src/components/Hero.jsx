@@ -1,6 +1,6 @@
 import React from 'react';
 export const Hero = () => {
-  return <div className="relative w-full h-[500px] md:h-[600px] bg-black">
+  return <div className="relative w-full h-[500px] md:h-[600px] bg-black mt-3">
       <div className="absolute inset-0">
         <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80" alt="Beautiful vacation rental by the lake" className="w-full h-full object-cover opacity-80" />
       </div>
