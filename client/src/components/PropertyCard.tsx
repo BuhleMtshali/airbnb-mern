@@ -6,16 +6,9 @@ export const PropertyCard = ({ property }) => {
 
   const handleBooking = async () => {
   console.log('Property object:', property);
-
-  const placeId = property._id || property.id;
-
-  if (!placeId || typeof placeId !== 'string' || placeId.length !== 24) {
-    alert('Invalid property ID detected. Can’t proceed with booking.');
-    return;
-  }
-
+  
   const payload = {
-    place: placeId,
+    place: property._id || property.id,  // fallback to id if _id missing
     checkIn: '2025-08-10',
     checkOut: '2025-08-15',
     numberOfGuests: 2,
