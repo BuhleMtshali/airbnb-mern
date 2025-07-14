@@ -13,6 +13,7 @@ import PlacesForm from './components/PlacesForm'
 import Place from './components/Place'
 import Booking from './components/Booking'
 
+
 axios.defaults.baseURL = 'http://localhost:4000'
 axios.defaults.withCredentials = true;
 
