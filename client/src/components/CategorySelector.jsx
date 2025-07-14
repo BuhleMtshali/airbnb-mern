@@ -1,7 +1,8 @@
 import React, { useRef } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
 export const CategorySelector = () => {
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  //const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef(null);
   const categories = [{
     name: 'Amazing views',
     icon: '🏔️'
@@ -58,7 +59,7 @@ export const CategorySelector = () => {
     }
   };
   return <div className="relative pt-8 pb-4">
-      <div ref={scrollContainerRef} className="flex overflow-x-auto scrollbar-hide space-x-8 pb-4">
+     <div ref={scrollContainerRef} className="flex overflow-x-auto scrollbar-hide space-x-8 pb-4">
         {categories.map((category, index) => <div key={index} className="flex flex-col items-center space-y-2 min-w-[80px] cursor-pointer">
             <div className="text-2xl">{category.icon}</div>
             <span className="text-xs whitespace-nowrap">{category.name}</span>
