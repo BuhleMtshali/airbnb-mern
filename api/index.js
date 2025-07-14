@@ -185,22 +185,38 @@ app.post('/upload', photosMiddleware.array('photos', 100), async (req, res) => {
 
 //BOOKINGS: Create booking
 app.post('/bookings', async (req, res) => {
-  const userData = await getUserDataFromReq(req);
-  const { place, checkIn, checkOut, numberOfGuests, name, phone, price } = req.body;
+  try {
+    const userData = await getUserDataFromReq(req);
+    console.log('User Data:', userData);
+    console.log('Booking Payload:', req.body);
 
-  const bookingDoc = await Booking.create({
-    place,
-    checkIn,
-    checkOut,
-    numberOfGuests,
-    name,
-    phone,
-    price,
-    user: userData.id,
-  });
+    if (!userData) return res.status(401).json({ error: 'Unauthorized: no user data' });
 
-  res.json(bookingDoc);
+    const { place, checkIn, checkOut, numberOfGuests, name, phone, price } = req.body;
+
+    if (!place || !checkIn || !checkOut || !numberOfGuests || !name || !phone || !price) {
+      console.log('❌ Missing fields in booking request');
+      return res.status(400).json({ error: 'Missing required booking fields' });
+    }
+
+    const bookingDoc = await Booking.create({
+      place,
+      checkIn,
+      checkOut,
+      numberOfGuests,
+      name,
+      phone,
+      price,
+      user: userData.id,
+    });
+
+    res.json(bookingDoc);
+  } catch (error) {
+    console.error('❌ Error creating booking:', error);
+    res.status(500).json({ error: 'Server error while creating booking', details: error.message });
+  }
 });
+
 
 // BOOKINGS: Get user bookings
 app.get('/bookings', async (req, res) => {

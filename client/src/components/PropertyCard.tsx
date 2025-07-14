@@ -1,67 +1,48 @@
-import React, { useState } from 'react';
-import { StarIcon, HeartIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
-import { PropertyGrid } from './PropertyGrid';
-interface PropertyCardProps {
-  property: {
-    id: number;
-    title: string;
-    location: string;
-    distance: string;
-    dates: string;
-    price: number;
-    rating: number;
-    images: string[];
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+
+export const PropertyCard = ({ property }) => {
+  const navigate = useNavigate();
+
+  const handleBooking = async () => {
+    const payload = {
+      place: property._id, // 🔥 IMPORTANT: this should be the actual MongoDB _id from the backend
+      checkIn: '2025-08-10',  // Replace with real input or selection
+      checkOut: '2025-08-15', // Replace with real input or selection
+      numberOfGuests: 2,      // Replace with user input
+      name: 'Zano Mtshali',   // Can fetch from user profile or input field
+      phone: '0123456789',    // Same here
+      price: property.price * 5, // Or however you calculate total
+    };
+
+    try {
+      const response = await axios.post('http://localhost:4000/bookings', payload, {
+        withCredentials: true, // 🔐 important for sending cookies (JWT)
+      });
+
+      console.log('✅ Booking successful:', response.data);
+      alert('Booking successful!');
+      navigate('/account/bookings'); // Redirect user to their bookings
+    } catch (error) {
+      console.error('❌ Booking failed:', error);
+      alert('Booking failed. Please try again.');
+    }
   };
-}
-export const PropertyCard = ({
-  property
-}: PropertyCardProps) => {
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const nextImage = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setCurrentImageIndex(prev => (prev + 1) % property.images.length);
-  };
-  const prevImage = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setCurrentImageIndex(prev => (prev - 1 + property.images.length) % property.images.length);
-  };
-  return <div className="group cursor-pointer">
-      <div className="relative aspect-square overflow-hidden rounded-xl">
-        <img src={property.images[currentImageIndex]} alt={property.title} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
-        <button onClick={e => prevImage(e)} className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white rounded-full p-1 shadow-md opacity-0 group-hover:opacity-100 transition-opacity" style={{
-        display: currentImageIndex === 0 ? 'none' : 'block'
-      }}>
-          <ChevronLeftIcon size={16} />
-        </button>
-        <button onClick={e => nextImage(e)} className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white rounded-full p-1 shadow-md opacity-0 group-hover:opacity-100 transition-opacity" style={{
-        display: currentImageIndex === property.images.length - 1 ? 'none' : 'block'
-      }}>
-          <ChevronRightIcon size={16} />
-        </button>
-        <button className="absolute top-2 right-2 text-white hover:text-[#FF5A5F]">
-          <HeartIcon size={24} className="stroke-[1.5] fill-transparent hover:fill-white" />
-        </button>
-        <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-1">
-          {property.images.map((_, index) => <div key={index} className={`h-1.5 w-1.5 rounded-full ${currentImageIndex === index ? 'bg-white' : 'bg-white/50'}`} />)}
-        </div>
-      </div>
-      <div className="mt-3">
-        <div className="flex justify-between">
-          <h3 className="font-medium">{property.title}</h3>
-          <div className="flex items-center">
-            <StarIcon size={14} className="fill-current" />
-            <span className="ml-1 text-sm">{property.rating}</span>
-          </div>
-        </div>
-        <p className="text-gray-500 text-sm">{property.location}</p>
-        <p className="text-gray-500 text-sm">{property.distance}</p>
-        <p className="text-gray-500 text-sm">{property.dates}</p>
-        <p className="mt-1">
-          <span className="font-semibold">${property.price}</span>
-          <span className="text-sm"> night</span>
-        </p>
-      </div>
-    </div>;
+
+  return (
+    <div className="bg-white p-4 rounded-xl shadow-md">
+      <img src={property.images[0]} alt={property.title} className="w-full h-48 object-cover rounded-md" />
+      <h2 className="text-xl font-semibold mt-2">{property.title}</h2>
+      <p>{property.location}</p>
+      <p>R{property.price} / night</p>
+      <button
+        onClick={handleBooking}
+        className="mt-4 bg-primary text-white px-4 py-2 rounded-xl hover:bg-opacity-90 transition"
+      >
+        Book Now
+      </button>
+    </div>
+  );
 };
+
+
