@@ -28,7 +28,7 @@ mongoose.connect(process.env.MONGO_URL)
 app.use(express.json());
 app.use(cookieParser());
 app.use('/uploads', express.static(__dirname + '/uploads'));
-app.use(cors({ credentials: true, origin: 'http://localhost:5173' }));
+app.use(cors({ credentials: true, origin: ['http://localhost:5173', 'http://localhost:5174'] }));
 
 // Helper to get logged-in user from JWT token
 function getUserDataFromReq(req) {
@@ -185,42 +185,22 @@ app.post('/upload', photosMiddleware.array('photos', 100), async (req, res) => {
 
 //BOOKINGS: Create booking
 app.post('/bookings', async (req, res) => {
-  try {
-    const userData = await getUserDataFromReq(req);
-    if (!userData) return res.status(401).json({ error: 'Unauthorized: no user data' });
+  const userData = await getUserDataFromReq(req);
+  const { place, checkIn, checkOut, numberOfGuests, name, phone, price } = req.body;
 
-    const { place, checkIn, checkOut, numberOfGuests, name, phone, price } = req.body;
+  const bookingDoc = await Booking.create({
+    place,
+    checkIn,
+    checkOut,
+    numberOfGuests,
+    name,
+    phone,
+    price,
+    user: userData.id,
+  });
 
-    // ✅ Check for required fields
-    if (!place || !checkIn || !checkOut || !numberOfGuests || !name || !phone || !price) {
-      return res.status(400).json({ error: 'Missing required booking fields' });
-    }
-
-    // ✅ Validate that "place" is a proper MongoDB ObjectId string
-    if (!mongoose.Types.ObjectId.isValid(place)) {
-      console.log('❌ Invalid place ID:', place);
-      return res.status(400).json({ error: 'Invalid property ID. Must be a valid MongoDB ObjectId string.' });
-    }
-
-    const bookingDoc = await Booking.create({
-      place,
-      checkIn,
-      checkOut,
-      numberOfGuests,
-      name,
-      phone,
-      price,
-      user: userData.id,
-    });
-
-    res.json(bookingDoc);
-  } catch (error) {
-    console.error('❌ Booking creation error:', error);
-    res.status(500).json({ error: 'Server error while creating booking', details: error.message });
-  }
+  res.json(bookingDoc);
 });
-
-
 
 // BOOKINGS: Get user bookings
 app.get('/bookings', async (req, res) => {
@@ -276,3 +256,5 @@ app.delete('/bookings/:id', async (req, res) => {
 app.listen(4000, () => {
   console.log('🚀 Server running at http://localhost:4000');
 });
+
+

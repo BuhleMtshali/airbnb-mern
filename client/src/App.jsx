@@ -13,7 +13,6 @@ import PlacesForm from './components/PlacesForm'
 import Place from './components/Place'
 import Booking from './components/Booking'
 
-
 axios.defaults.baseURL = 'http://localhost:4000'
 axios.defaults.withCredentials = true;
 
@@ -22,21 +21,27 @@ function App() {
     <UserContextProvider>
       <Routes>
         <Route path="/" element={<Layout />}>
+          {/* Homepage */}
           <Route index element={<Index />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/account" element={<Profile />} />
-          <Route path="/account/bookings" element={<Bookings />} />
-          <Route path="/account/places" element={<Places />} />
-          <Route path="/account/places/new" element={<PlacesForm />} />
-          <Route path="/account/places/:id" element={<PlacesForm />} />
-          <Route path="/place/:id" element={<Place />} />
-          <Route path="/account/bookings" element={<Bookings />} />
-          <Route path="/account/bookings/:id" element={<Booking />} />
+          <Route path="login" element={<Login />} />
+          <Route path="register" element={<Register />} />
+
+          {/* ACCOUNT ROUTES NESTED */}
+          <Route path="account">
+            <Route index element={<Profile />} />
+            <Route path="bookings" element={<Bookings />} />
+            <Route path="bookings/:id" element={<Booking />} />
+            <Route path="places" element={<Places />} />
+            <Route path="places/new" element={<PlacesForm />} />
+            <Route path="places/:id" element={<PlacesForm />} />
+          </Route>
+
+          {/* PLACE ROUTE */}
+          <Route path="place/:id" element={<Place />} />
         </Route>
       </Routes>
     </UserContextProvider>
   )
 }
 
-export default App
+export default App;

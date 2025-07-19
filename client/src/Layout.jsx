@@ -1,3 +1,4 @@
+// src/Layout.jsx
 import { Outlet, useLocation } from 'react-router-dom';
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
@@ -7,21 +8,19 @@ import { Footer } from './components/Footer';
 import React from 'react';
 
 const Layout = () => {
-  const location = useLocation();
-  const pathname = location.pathname;
+  const { pathname } = useLocation();
 
-  // Check if we're on /account or any of its subpages
+  const isAuthPage = pathname === '/login' || pathname === '/register';
   const isAccountPage = pathname.startsWith('/account');
 
   return (
     <div className="py-4 px-8 flex flex-col min-h-screen">
-      <Header />
+      {/* Only hide header on login/register */}
+      {!isAuthPage && <Header />}
 
-      {isAccountPage ? (
-        // Render account pages
+      {isAuthPage || isAccountPage ? (
         <Outlet />
       ) : (
-        // Render homepage
         <>
           <Hero />
           <CategorySelector />
