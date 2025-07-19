@@ -1,6 +1,6 @@
 import { Route, Routes } from 'react-router-dom'
 import './App.css'
-import Index from './components/Index'
+import Index from './components/Index.jsx'
 import Login from './components/Login'
 import Layout from './Layout'
 import Register from './components/Register'
