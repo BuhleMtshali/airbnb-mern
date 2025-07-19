@@ -187,16 +187,19 @@ app.post('/upload', photosMiddleware.array('photos', 100), async (req, res) => {
 app.post('/bookings', async (req, res) => {
   try {
     const userData = await getUserDataFromReq(req);
-    console.log('User Data:', userData);
-    console.log('Booking Payload:', req.body);
-
     if (!userData) return res.status(401).json({ error: 'Unauthorized: no user data' });
 
     const { place, checkIn, checkOut, numberOfGuests, name, phone, price } = req.body;
 
+    // ✅ Check for required fields
     if (!place || !checkIn || !checkOut || !numberOfGuests || !name || !phone || !price) {
-      console.log('❌ Missing fields in booking request');
       return res.status(400).json({ error: 'Missing required booking fields' });
+    }
+
+    // ✅ Validate that "place" is a proper MongoDB ObjectId string
+    if (!mongoose.Types.ObjectId.isValid(place)) {
+      console.log('❌ Invalid place ID:', place);
+      return res.status(400).json({ error: 'Invalid property ID. Must be a valid MongoDB ObjectId string.' });
     }
 
     const bookingDoc = await Booking.create({
@@ -212,10 +215,11 @@ app.post('/bookings', async (req, res) => {
 
     res.json(bookingDoc);
   } catch (error) {
-    console.error('❌ Error creating booking:', error);
+    console.error('❌ Booking creation error:', error);
     res.status(500).json({ error: 'Server error while creating booking', details: error.message });
   }
 });
+
 
 
 // BOOKINGS: Get user bookings
