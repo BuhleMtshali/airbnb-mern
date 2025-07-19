@@ -28,7 +28,15 @@ mongoose.connect(process.env.MONGO_URL)
 app.use(express.json());
 app.use(cookieParser());
 app.use('/uploads', express.static(__dirname + '/uploads'));
-app.use(cors({ credentials: true, origin: ['http://localhost:5173', 'http://localhost:5174'] }));
+app.use(cors({
+  credentials: true,
+  origin: [
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'https://deft-crisp-e20b4b.netlify.app'
+  ]
+}));
+
 
 // Helper to get logged-in user from JWT token
 function getUserDataFromReq(req) {
